@@ -31,6 +31,7 @@ function Kitchen() {
   const [tossTarget, setTossTarget] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
 
   const {
     userId,
@@ -290,7 +291,7 @@ function Kitchen() {
                   {/* Click to start cooking (only for your own potato) */}
                   {isMe && !someoneCooking && (
                     <motion.button
-                      onClick={handleStartHeating}
+                      onClick={() => setShowDurationPicker(true)}
                       disabled={isLoading}
                       className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 rounded-full transition-all group"
                       whileHover={{ scale: 1.1 }}
@@ -403,33 +404,72 @@ function Kitchen() {
             )}
           </AnimatePresence>
 
-          {/* Duration Selector - shown when no one is cooking */}
-          {!someoneCooking && !members.some(m => m.state === POTATO_STATES.COOLING) && (
+        </div>
+
+        {/* Duration Picker Modal */}
+        <AnimatePresence>
+          {showDurationPicker && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowDurationPicker(false)}
             >
-              <p className="text-white/60 text-sm mb-2">Select cooking time:</p>
-              <div className="flex gap-2 bg-black/40 p-2 rounded-xl backdrop-blur-sm">
-                {DURATION_OPTIONS.map((opt) => (
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-gradient-to-b from-amber-900/90 to-orange-900/90 backdrop-blur-md rounded-2xl p-6 border border-orange-500/30 shadow-2xl max-w-md w-full mx-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-white font-bold text-xl mb-2 text-center">
+                  🔥 Start Cooking
+                </h3>
+                <p className="text-white/60 text-sm mb-6 text-center">
+                  How long do you want to focus?
+                </p>
+                
+                <div className="flex gap-2 justify-center mb-6">
+                  {DURATION_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSelectedDuration(opt.value)}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                        selectedDuration === opt.value
+                          ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30 scale-105'
+                          : 'bg-white/10 text-white/60 hover:bg-white/20'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
                   <button
-                    key={opt.value}
-                    onClick={() => setSelectedDuration(opt.value)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      selectedDuration === opt.value
-                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                        : 'bg-white/10 text-white/60 hover:bg-white/20'
-                    }`}
+                    onClick={() => setShowDurationPicker(false)}
+                    className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white/60 rounded-xl transition-all"
                   >
-                    {opt.label}
+                    Cancel
                   </button>
-                ))}
-              </div>
-              <p className="text-white/40 text-xs mt-2">Click your potato to start cooking!</p>
+                  <motion.button
+                    onClick={() => {
+                      setShowDurationPicker(false);
+                      handleStartHeating();
+                    }}
+                    disabled={isLoading}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 disabled:opacity-50"
+                  >
+                    {isLoading ? 'Starting...' : "Let's Cook! 🍳"}
+                  </motion.button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
         {/* Timer - Fixed bottom right */}
         <AnimatePresence>

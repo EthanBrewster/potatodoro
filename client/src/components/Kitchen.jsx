@@ -32,6 +32,8 @@ function Kitchen() {
   const [isLoading, setIsLoading] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(true); // Show on first load
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const {
     userId,
@@ -439,6 +441,78 @@ function Kitchen() {
                     {isLoading ? 'Starting...' : "Let's Cook! 🍳"}
                   </motion.button>
                 </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Share Code Modal - shown when kitchen is created */}
+        <AnimatePresence>
+          {showShareModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+              onClick={() => setShowShareModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-gradient-to-b from-amber-900/95 to-orange-900/95 backdrop-blur-md rounded-2xl p-8 border border-orange-500/30 shadow-2xl max-w-md w-full mx-4 text-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="text-6xl mb-4"
+                >
+                  🍳
+                </motion.div>
+                
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Kitchen is Ready!
+                </h2>
+                <p className="text-white/60 mb-6">
+                  Share this code with friends to invite them:
+                </p>
+
+                {/* Code Display */}
+                <div className="bg-black/40 rounded-xl p-4 mb-6">
+                  <p className="text-3xl font-mono font-bold text-orange-400 tracking-widest">
+                    {kitchenCode}
+                  </p>
+                </div>
+
+                {/* Copy Button */}
+                <motion.button
+                  onClick={() => {
+                    navigator.clipboard.writeText(kitchenCode);
+                    setCodeCopied(true);
+                    setTimeout(() => setCodeCopied(false), 2000);
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl shadow-lg mb-3 flex items-center justify-center gap-2"
+                >
+                  {codeCopied ? (
+                    <>✅ Copied!</>
+                  ) : (
+                    <>📋 Copy Code</>
+                  )}
+                </motion.button>
+
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="w-full py-3 bg-white/10 hover:bg-white/20 text-white/80 rounded-xl transition-all"
+                >
+                  Start Cooking Solo
+                </button>
+
+                <p className="text-white/40 text-xs mt-4">
+                  You can also find the code in the top-left corner
+                </p>
               </motion.div>
             </motion.div>
           )}

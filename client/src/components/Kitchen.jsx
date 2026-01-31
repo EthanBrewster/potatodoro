@@ -1,10 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useGameStore, { POTATO_STATES, DEFAULT_WORK_DURATION } from '../store/gameStore';
 import { useSocket } from '../hooks/useSocket';
 import Potato from './Potato';
 import Timer from './Timer';
-import Members from './Members';
 import TossAnimation from './TossAnimation';
 
 const DURATION_OPTIONS = [
@@ -13,6 +12,18 @@ const DURATION_OPTIONS = [
   { label: '45 min', value: 45 * 60 * 1000 },
   { label: '60 min', value: 60 * 60 * 1000 },
 ];
+
+// Plate positions relative to the background image (percentages)
+// These align with the 4 colored plates in the background
+const PLATE_POSITIONS = [
+  { id: 0, left: '23%', top: '22%', color: 'blue' },    // Blue plate (left)
+  { id: 1, left: '38%', top: '22%', color: 'green' },   // Green plate
+  { id: 2, left: '53%', top: '22%', color: 'orange' },  // Orange plate
+  { id: 3, left: '68%', top: '22%', color: 'yellow' },  // Yellow plate (right)
+];
+
+// Grill center position
+const GRILL_POSITION = { left: '42%', top: '52%' };
 
 function Kitchen() {
   const [selectedDuration, setSelectedDuration] = useState(DEFAULT_WORK_DURATION);
@@ -47,6 +58,20 @@ function Kitchen() {
   const currentMember = members.find(m => m.id === userId);
   const myState = currentMember?.state || POTATO_STATES.IDLE;
 
+  // Assign members to plate positions
+  const memberPlates = useMemo(() => {
+    const assignments = new Map();
+    members.forEach((member, index) => {
+      if (index < PLATE_POSITIONS.length) {
+        assignments.set(member.id, PLATE_POSITIONS[index]);
+      }
+    });
+    return assignments;
+  }, [members]);
+
+  // Get my plate position
+  const myPlate = memberPlates.get(userId);
+
   // Update elapsed time continuously
   useEffect(() => {
     if (!timerStartedAt || !isHoldingPotato) {
@@ -61,7 +86,7 @@ function Kitchen() {
     return () => clearInterval(interval);
   }, [timerStartedAt, isHoldingPotato]);
 
-  // Handle start heating
+  // Handle start heating (toss potato to grill)
   const handleStartHeating = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -73,29 +98,17 @@ function Kitchen() {
     }
   }, [startHeating, selectedDuration, setError]);
 
-  // Handle toss
-  const handleToss = useCallback(async (targetId = null) => {
+  // Handle grab (pull potato back from grill to cool)
+  const handleGrab = useCallback(async () => {
     setIsLoading(true);
-    setShowTossAnimation(true);
-    
-    // Find target for animation
-    const target = targetId 
-      ? members.find(m => m.id === targetId)
-      : members.find(m => m.id !== userId && m.state !== POTATO_STATES.HEATING);
-    
-    setTossTarget(target);
-
     try {
-      await tossPotato(targetId);
+      await tossPotato(null); // Toss to self / end session
     } catch (error) {
       setError(error.message);
-      setShowTossAnimation(false);
     } finally {
       setIsLoading(false);
-      // Hide animation after delay
-      setTimeout(() => setShowTossAnimation(false), 1500);
     }
-  }, [tossPotato, members, userId, setError]);
+  }, [tossPotato, setError]);
 
   // Handle cancel
   const handleCancel = useCallback(async () => {
@@ -112,7 +125,7 @@ function Kitchen() {
   // Handle leave
   const handleLeave = useCallback(async () => {
     if (isHoldingPotato && potatoState === POTATO_STATES.HEATING) {
-      if (!confirm('You\'re still holding the potato! Leave anyway?')) {
+      if (!confirm('You\'re still cooking! Leave anyway?')) {
         return;
       }
     }
@@ -124,9 +137,12 @@ function Kitchen() {
     navigator.clipboard.writeText(kitchenCode);
   };
 
+  // Check if someone is cooking (potato on grill)
+  const someoneCooking = kitchen?.potatoHolder && potatoState === POTATO_STATES.HEATING;
+
   return (
     <div 
-      className="h-full flex flex-col relative"
+      className="h-full flex flex-col relative overflow-hidden"
       style={{
         backgroundImage: 'url(/bg_kitchen_main.png)',
         backgroundSize: 'cover',
@@ -134,13 +150,64 @@ function Kitchen() {
         backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Subtle dark overlay */}
+      <div className="absolute inset-0 bg-black/20" />
+
+      {/* Grill Glow Effect - shows when someone is cooking */}
+      <AnimatePresence>
+        {someoneCooking && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute z-10 pointer-events-none"
+            style={{
+              left: '50%',
+              top: '58%',
+              transform: 'translate(-50%, -50%)',
+              width: '500px',
+              height: '400px',
+            }}
+          >
+            {/* Outer glow */}
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(ellipse at center, rgba(255,120,0,0.4) 0%, rgba(255,80,0,0.2) 40%, transparent 70%)',
+              }}
+              animate={{
+                opacity: potatoState === POTATO_STATES.CRITICAL ? [0.8, 1, 0.8] : [0.5, 0.7, 0.5],
+                scale: potatoState === POTATO_STATES.CRITICAL ? [1, 1.1, 1] : [1, 1.05, 1],
+              }}
+              transition={{
+                duration: potatoState === POTATO_STATES.CRITICAL ? 0.3 : 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+            {/* Inner heat shimmer */}
+            <motion.div
+              className="absolute inset-[20%] rounded-full"
+              style={{
+                background: 'radial-gradient(ellipse at center, rgba(255,200,100,0.3) 0%, transparent 60%)',
+              }}
+              animate={{
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Content */}
-      <div className="relative z-10 h-full flex flex-col p-4 md:p-6">
+      <div className="relative z-20 h-full flex flex-col p-4 md:p-6">
         {/* Header */}
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex items-center justify-between mb-4">
           <div>
             <h1 className="font-display text-2xl text-white text-glow">
               The Kitchen
@@ -158,7 +225,7 @@ function Kitchen() {
 
           <div className="flex items-center gap-3">
             <span className="text-white/60 text-sm">
-              👨‍🍳 {members.length}/5 chefs
+              👨‍🍳 {members.length}/4 chefs
             </span>
             <button
               onClick={handleLeave}
@@ -169,191 +236,210 @@ function Kitchen() {
           </div>
         </header>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
-          {/* Potato Area - Center on Grill */}
-          <div className="flex-1 flex flex-col items-center justify-end pb-8 md:pb-16 min-h-[400px]">
-            {/* The Potato - positioned on the grill */}
-            <motion.div
-              className="relative"
-              style={{ marginBottom: '5%' }} 
-              animate={{
-                scale: potatoState === POTATO_STATES.CRITICAL ? [1, 1.02, 1] : 1,
+        {/* Player Plates - positioned over background plates */}
+        {members.map((member) => {
+          const plate = memberPlates.get(member.id);
+          if (!plate) return null;
+          
+          const isMe = member.id === userId;
+          const isCooking = kitchen?.potatoHolder === member.id && potatoState === POTATO_STATES.HEATING;
+          const isCooling = member.state === POTATO_STATES.COOLING;
+          const showPotatoOnPlate = !isCooking; // Show potato on plate unless cooking
+
+          return (
+            <div
+              key={member.id}
+              className="absolute z-30"
+              style={{
+                left: plate.left,
+                top: plate.top,
+                transform: 'translate(-50%, -50%)',
               }}
-              transition={{ duration: 0.3, repeat: potatoState === POTATO_STATES.CRITICAL ? Infinity : 0 }}
             >
-              <Potato 
-                state={isHoldingPotato ? potatoState : POTATO_STATES.IDLE}
-                size="xxl"
-                elapsedMs={isHoldingPotato ? elapsedMs : 0}
-                totalDurationMs={timerDuration || DEFAULT_WORK_DURATION}
-              />
+              {/* Player Name */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap"
+              >
+                <span className={`
+                  px-3 py-1 rounded-full text-sm font-medium
+                  ${isMe 
+                    ? 'bg-orange-500/80 text-white' 
+                    : 'bg-black/60 text-white/90'
+                  }
+                  ${isCooking ? 'ring-2 ring-orange-400 ring-offset-2 ring-offset-transparent' : ''}
+                `}>
+                  {member.nickname || 'Chef'} {isMe && '(you)'}
+                </span>
+              </motion.div>
 
-              {/* Potato holder indicator */}
-              {currentHolder && !isHoldingPotato && (
+              {/* Potato on Plate */}
+              {showPotatoOnPlate && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="relative"
                 >
-                  <span className="text-white/80 text-sm bg-black/50 px-3 py-1 rounded-full">
-                    🥔 {currentHolder.nickname} is heating
-                  </span>
-                </motion.div>
-              )}
-            </motion.div>
-
-            {/* Timer (when heating) */}
-            <AnimatePresence>
-              {isHoldingPotato && timerStartedAt && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="mt-8"
-                >
-                  <Timer
-                    startTime={timerStartedAt}
-                    duration={timerDuration}
-                    onComplete={() => {}}
+                  <Potato
+                    state={isCooling ? POTATO_STATES.COOLING : POTATO_STATES.IDLE}
+                    size="md"
+                    showEffects={isCooling}
                   />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Controls */}
-            <div className="mt-8 flex flex-col items-center gap-4">
-              {/* Idle state - Start button */}
-              {myState === POTATO_STATES.IDLE && !kitchen?.potatoHolder && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col items-center gap-4"
-                >
-                  {/* Duration selector */}
-                  <div className="flex gap-2 bg-black/30 p-2 rounded-xl backdrop-blur-sm">
-                    {DURATION_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setSelectedDuration(opt.value)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          selectedDuration === opt.value
-                            ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                            : 'bg-white/10 text-white/60 hover:bg-white/20'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={handleStartHeating}
-                    disabled={isLoading}
-                    className="btn btn-primary text-lg px-8 flex items-center gap-3"
-                  >
-                    <span className="text-2xl">🧤</span>
-                    Grab the Potato
-                  </button>
-                </motion.div>
-              )}
-
-              {/* Waiting for others */}
-              {myState === POTATO_STATES.IDLE && kitchen?.potatoHolder && kitchen.potatoHolder !== userId && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center bg-black/30 px-6 py-4 rounded-xl backdrop-blur-sm"
-                >
-                  <p className="text-white/80 mb-2">
-                    Waiting for {currentHolder?.nickname || 'someone'} to finish...
-                  </p>
-                  <p className="text-white/50 text-sm">
-                    The potato will be tossed to you soon! 🥔
-                  </p>
-                </motion.div>
-              )}
-
-              {/* Heating state - Toss button */}
-              {isHoldingPotato && potatoState !== POTATO_STATES.IDLE && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col items-center gap-4"
-                >
-                  {potatoState === POTATO_STATES.CRITICAL && (
-                    <motion.p
-                      className="text-red-400 font-bold text-lg bg-black/50 px-4 py-2 rounded-lg"
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 0.5, repeat: Infinity }}
-                    >
-                      🔥 TIME'S UP! TOSS THE POTATO! 🔥
-                    </motion.p>
-                  )}
-
-                  <div className="flex gap-3">
-                    {/* Toss Button with PNG */}
+                  
+                  {/* Click to start cooking (only for your own potato) */}
+                  {isMe && !someoneCooking && !isCooling && (
                     <motion.button
-                      onClick={() => handleToss()}
+                      onClick={handleStartHeating}
                       disabled={isLoading}
-                      className={`relative overflow-hidden rounded-2xl transition-all ${
-                        potatoState === POTATO_STATES.CRITICAL ? 'animate-bounce' : ''
-                      }`}
-                      whileHover={{ scale: 1.05 }}
+                      className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 rounded-full transition-all group"
+                      whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <img 
-                        src="/btn_toss_active.png" 
-                        alt="Toss!" 
-                        className="h-16 w-auto"
-                        style={{
-                          filter: potatoState === POTATO_STATES.CRITICAL 
-                            ? 'drop-shadow(0 0 20px rgba(255, 69, 0, 0.8))' 
-                            : 'drop-shadow(0 0 10px rgba(255, 165, 0, 0.5))',
-                        }}
-                      />
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-xs font-bold bg-orange-500 px-2 py-1 rounded-full transition-all">
+                        Cook! 🔥
+                      </span>
                     </motion.button>
+                  )}
 
-                    {potatoState === POTATO_STATES.HEATING && (
+                  {/* Cooling indicator */}
+                  {isCooling && (
+                    <motion.div
+                      className="absolute -bottom-6 left-1/2 -translate-x-1/2"
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <span className="text-blue-300 text-xs">❄️ Cooling</span>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Empty plate indicator when cooking */}
+              {isCooking && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.5 }}
+                  className="w-20 h-20 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center"
+                >
+                  <span className="text-white/40 text-xs">Cooking...</span>
+                </motion.div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Center Grill Area - The cooking potato */}
+        <div
+          className="absolute z-30"
+          style={{
+            left: GRILL_POSITION.left,
+            top: GRILL_POSITION.top,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          {/* Potato on Grill (when someone is cooking) */}
+          <AnimatePresence>
+            {someoneCooking && (
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0, y: -100 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.5, opacity: 0, y: -100 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                className="relative"
+              >
+                <Potato
+                  state={potatoState}
+                  size="xxl"
+                  elapsedMs={elapsedMs}
+                  totalDurationMs={timerDuration || DEFAULT_WORK_DURATION}
+                  showEffects={true}
+                />
+
+                {/* Who's cooking label */}
+                <motion.div
+                  className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <span className="text-white bg-black/60 px-3 py-1 rounded-full text-sm">
+                    {isHoldingPotato ? "Your potato!" : `${currentHolder?.nickname}'s potato`}
+                  </span>
+                </motion.div>
+
+                {/* Timer (positioned above the potato) */}
+                {timerStartedAt && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute -top-20 left-1/2 -translate-x-1/2"
+                  >
+                    <Timer
+                      startTime={timerStartedAt}
+                      duration={timerDuration}
+                      onComplete={() => {}}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Grab button (only for the person cooking, when critical) */}
+                {isHoldingPotato && (
+                  <motion.div
+                    className="absolute -bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {potatoState === POTATO_STATES.CRITICAL ? (
+                      <motion.button
+                        onClick={handleGrab}
+                        disabled={isLoading}
+                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-xl shadow-lg"
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 0.3, repeat: Infinity }}
+                      >
+                        🧤 GRAB IT! 🔥
+                      </motion.button>
+                    ) : (
                       <button
                         onClick={handleCancel}
                         disabled={isLoading}
-                        className="btn btn-secondary"
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/60 text-sm rounded-lg transition-all"
                       >
                         Cancel
                       </button>
                     )}
-                  </div>
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              {/* Cooling state */}
-              {myState === POTATO_STATES.COOLING && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center bg-blue-500/20 px-6 py-4 rounded-xl backdrop-blur-sm border border-blue-500/30"
-                >
-                  <div className="text-4xl mb-2">❄️</div>
-                  <p className="text-blue-300 font-medium text-lg">
-                    Cooling Down...
-                  </p>
-                  <p className="text-blue-200/60 text-sm mt-1">
-                    Take a break! You've earned it.
-                  </p>
-                </motion.div>
-              )}
-            </div>
-          </div>
-
-          {/* Members Panel - Side */}
-          <div className="lg:w-80 shrink-0">
-            <Members 
-              onSendReaction={() => {}}
-              onSelectTarget={handleToss}
-              canSelectTarget={isHoldingPotato && potatoState === POTATO_STATES.CRITICAL}
-            />
-          </div>
+          {/* Duration Selector - shown when no one is cooking */}
+          {!someoneCooking && !members.some(m => m.state === POTATO_STATES.COOLING) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-3"
+            >
+              <p className="text-white/60 text-sm mb-2">Select cooking time:</p>
+              <div className="flex gap-2 bg-black/40 p-2 rounded-xl backdrop-blur-sm">
+                {DURATION_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedDuration(opt.value)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedDuration === opt.value
+                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-white/40 text-xs mt-2">Click your potato to start cooking!</p>
+            </motion.div>
+          )}
         </div>
 
         {/* Toss Animation Overlay */}

@@ -171,11 +171,12 @@ function Kitchen() {
 
         {/* Main content */}
         <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
-          {/* Potato Area - Center */}
-          <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
-            {/* The Potato */}
+          {/* Potato Area - Center on Grill */}
+          <div className="flex-1 flex flex-col items-center justify-end pb-8 md:pb-16 min-h-[400px]">
+            {/* The Potato - positioned on the grill */}
             <motion.div
               className="relative"
+              style={{ marginBottom: '5%' }} 
               animate={{
                 scale: potatoState === POTATO_STATES.CRITICAL ? [1, 1.02, 1] : 1,
               }}
@@ -183,7 +184,7 @@ function Kitchen() {
             >
               <Potato 
                 state={isHoldingPotato ? potatoState : POTATO_STATES.IDLE}
-                size="xl"
+                size="xxl"
                 elapsedMs={isHoldingPotato ? elapsedMs : 0}
                 totalDurationMs={timerDuration || DEFAULT_WORK_DURATION}
               />

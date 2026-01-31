@@ -8,6 +8,7 @@ const SIZE_CONFIGS = {
   md: { width: 120, height: 120 },
   lg: { width: 180, height: 180 },
   xl: { width: 280, height: 280 },
+  xxl: { width: 380, height: 380 },
 };
 
 function Potato({ 

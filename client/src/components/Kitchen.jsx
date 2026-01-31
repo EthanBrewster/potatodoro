@@ -257,23 +257,24 @@ function Kitchen() {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              {/* Player Name */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap"
-              >
-                <span className={`
-                  px-3 py-1 rounded-full text-sm font-medium
-                  ${isMe 
-                    ? 'bg-orange-500/80 text-white' 
-                    : 'bg-black/60 text-white/90'
-                  }
-                  ${isCooking ? 'ring-2 ring-orange-400 ring-offset-2 ring-offset-transparent' : ''}
-                `}>
-                  {member.nickname || 'Chef'} {isMe && '(you)'}
-                </span>
-              </motion.div>
+              {/* Player Name - only show if NOT cooking (name shows above grill instead) */}
+              {!isCooking && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap"
+                >
+                  <span className={`
+                    px-3 py-1 rounded-full text-sm font-medium
+                    ${isMe 
+                      ? 'bg-orange-500/80 text-white' 
+                      : 'bg-black/60 text-white/90'
+                    }
+                  `}>
+                    {member.nickname || 'Chef'} {isMe && '(you)'}
+                  </span>
+                </motion.div>
+              )}
 
               {/* Potato on Plate - always shown in cooling/resting state */}
               {showPotatoOnPlate && (
@@ -372,32 +373,26 @@ function Kitchen() {
                   showEffects={true}
                 />
 
-                {/* Grab button (only for the person cooking, when critical) */}
+                {/* Grab button - always visible for the person cooking */}
                 {isHoldingPotato && (
                   <motion.div
-                    className="absolute -bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+                    className="absolute -bottom-16 left-1/2 -translate-x-1/2"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    {potatoState === POTATO_STATES.CRITICAL ? (
-                      <motion.button
-                        onClick={handleGrab}
-                        disabled={isLoading}
-                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-xl shadow-lg"
-                        animate={{ scale: [1, 1.05, 1] }}
-                        transition={{ duration: 0.3, repeat: Infinity }}
-                      >
-                        🧤 GRAB IT! 🔥
-                      </motion.button>
-                    ) : (
-                      <button
-                        onClick={handleCancel}
-                        disabled={isLoading}
-                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/60 text-sm rounded-lg transition-all"
-                      >
-                        Cancel
-                      </button>
-                    )}
+                    <motion.button
+                      onClick={handleGrab}
+                      disabled={isLoading}
+                      className={`px-6 py-3 font-bold rounded-xl shadow-lg transition-all ${
+                        potatoState === POTATO_STATES.CRITICAL
+                          ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white'
+                          : 'bg-white/20 hover:bg-white/30 text-white/80'
+                      }`}
+                      animate={potatoState === POTATO_STATES.CRITICAL ? { scale: [1, 1.05, 1] } : {}}
+                      transition={{ duration: 0.3, repeat: potatoState === POTATO_STATES.CRITICAL ? Infinity : 0 }}
+                    >
+                      {potatoState === POTATO_STATES.CRITICAL ? '🧤 GRAB IT! 🔥' : '🧤 Grab Potato'}
+                    </motion.button>
                   </motion.div>
                 )}
               </motion.div>

@@ -13,7 +13,12 @@ function LandingPage() {
   const [playersOnline, setPlayersOnline] = useState(0);
 
   const { userId, nickname: storedNickname, setUser, setKitchen, setError, isConnected } = useGameStore();
-  const { createKitchen, joinKitchen, socket } = useSocket();
+  const { createKitchen, joinKitchen } = useSocket();
+
+  // Debug connection state
+  useEffect(() => {
+    console.log('🔌 Connection state:', { isConnected, userId, storedNickname });
+  }, [isConnected, userId, storedNickname]);
 
   // Fetch online players count
   useEffect(() => {
@@ -40,7 +45,9 @@ function LandingPage() {
   }, [storedNickname]);
 
   const handleStartKitchen = () => {
+    console.log('🖱️ Start Kitchen clicked, nickname:', nickname, 'isConnected:', isConnected);
     if (!nickname.trim()) {
+      console.log('📝 No nickname, showing modal');
       setPendingAction('create');
       setShowNicknameModal(true);
       return;
@@ -95,9 +102,11 @@ function LandingPage() {
   };
 
   const handleNicknameSubmit = () => {
+    console.log('🚀 Nickname submit, action:', pendingAction, 'nickname:', nickname.trim());
     if (!nickname.trim()) return;
     setShowNicknameModal(false);
     if (pendingAction === 'create') {
+      console.log('🍳 Calling performCreate...');
       performCreate();
     } else if (pendingAction === 'join') {
       performJoin();

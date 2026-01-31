@@ -58,23 +58,44 @@ export function setupSocketHandlers(io) {
 
     // Create a new kitchen
     socket.on('create_kitchen', async (data, callback) => {
+      console.log('📥 create_kitchen event received:', data);
+      
+      if (typeof callback !== 'function') {
+        console.error('❌ No callback provided for create_kitchen');
+        return;
+      }
+
       try {
         const { nickname } = data;
+        if (!nickname) {
+          console.error('❌ No nickname provided');
+          callback({ success: false, error: 'Nickname is required' });
+          return;
+        }
+
         const userId = data.userId || uuidv4();
         const kitchenCode = generateKitchenCode();
 
+        console.log(`📝 Creating kitchen ${kitchenCode} for user ${userId} (${nickname})`);
+
         // Create user in Postgres
+        console.log('📝 Creating user in Postgres...');
         await createOrUpdateUser(userId, nickname);
+        console.log('✅ User created in Postgres');
 
         // Create kitchen in Redis
+        console.log('📝 Creating kitchen in Redis...');
         await createKitchen(kitchenCode, userId);
+        console.log('✅ Kitchen created in Redis');
 
         // Add creator as first member
+        console.log('📝 Adding member to kitchen...');
         await addMemberToKitchen(kitchenCode, {
           id: userId,
           nickname,
           socketId: socket.id
         });
+        console.log('✅ Member added');
 
         // Map socket to user
         await mapSocketToUser(socket.id, userId, kitchenCode);
@@ -82,18 +103,19 @@ export function setupSocketHandlers(io) {
         // Join socket room
         socket.join(kitchenCode);
 
+        const kitchen = await getKitchen(kitchenCode);
         console.log(`🍳 Kitchen created: ${kitchenCode} by ${nickname}`);
 
         callback({
           success: true,
           kitchenCode,
           userId,
-          kitchen: await getKitchen(kitchenCode)
+          kitchen
         });
 
       } catch (error) {
-        console.error('Create kitchen error:', error);
-        callback({ success: false, error: error.message });
+        console.error('❌ Create kitchen error:', error);
+        callback({ success: false, error: error.message || 'Failed to create kitchen' });
       }
     });
 

@@ -6,14 +6,14 @@ const SOCKET_URL = import.meta.env.PROD
   ? window.location.origin 
   : 'http://localhost:3000';
 
+// Singleton socket instance
+let socketInstance = null;
+
 export function useSocket() {
   const socketRef = useRef(null);
   const {
-    userId,
-    nickname,
     setConnected,
     setKitchen,
-    setMembers,
     updateMember,
     addMember,
     removeMember,
@@ -25,33 +25,44 @@ export function useSocket() {
     leaveKitchen,
   } = useGameStore();
 
-  // Initialize socket connection
+  // Initialize socket connection (singleton)
   useEffect(() => {
-    if (socketRef.current) return;
+    if (socketInstance) {
+      socketRef.current = socketInstance;
+      return;
+    }
+
+    console.log('🔌 Initializing socket connection to:', SOCKET_URL);
 
     const socket = io(SOCKET_URL, {
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
+      timeout: 20000,
     });
 
+    socketInstance = socket;
     socketRef.current = socket;
 
     // Connection handlers
     socket.on('connect', () => {
-      console.log('🔌 Connected to server');
+      console.log('🔌 Connected to server, socket.id:', socket.id);
       setConnected(true);
     });
 
-    socket.on('disconnect', () => {
-      console.log('🔌 Disconnected from server');
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Disconnected from server, reason:', reason);
       setConnected(false);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Connection error:', error);
-      setError('Failed to connect to server');
+      console.error('❌ Connection error:', error.message);
+      setError('Failed to connect to server: ' + error.message);
+    });
+
+    socket.on('error', (error) => {
+      console.error('❌ Socket error:', error);
     });
 
     // Kitchen events
@@ -131,9 +142,9 @@ export function useSocket() {
       addToppings(toppings);
     });
 
+    // Don't disconnect on unmount - keep singleton alive
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      // Keep socket alive
     };
   }, []);
 

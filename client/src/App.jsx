@@ -7,7 +7,7 @@ import Kitchen from './components/Kitchen';
 import Toast from './components/Toast';
 
 function App() {
-  const { kitchenCode, isConnected, error, clearError, toppings } = useGameStore();
+  const { kitchenCode, isConnected, error, clearError } = useGameStore();
   const { getKitchenState } = useSocket();
 
   // Sync kitchen state on reconnection
@@ -57,17 +57,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* New topping notification */}
-      <AnimatePresence>
-        {toppings.length > 0 && toppings.slice(-1).map((topping, i) => (
-          <Toast
-            key={`topping-${i}`}
-            message={`🎉 New Topping Unlocked: ${topping}!`}
-            type="success"
-            duration={5000}
-          />
-        ))}
-      </AnimatePresence>
     </div>
   );
 }

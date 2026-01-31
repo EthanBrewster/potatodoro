@@ -16,10 +16,10 @@ const DURATION_OPTIONS = [
 // Plate positions relative to the background image (percentages)
 // These align with the 4 colored plates in the background
 const PLATE_POSITIONS = [
-  { id: 0, left: '26.5%', top: '24%', color: 'blue' },    // Blue plate (left)
-  { id: 1, left: '41%', top: '24%', color: 'green' },     // Green plate
-  { id: 2, left: '55.5%', top: '24%', color: 'orange' },  // Orange plate
-  { id: 3, left: '70%', top: '24%', color: 'yellow' },    // Yellow plate (right)
+  { id: 0, left: '28%', top: '27%', color: 'blue' },      // Blue plate (left)
+  { id: 1, left: '42%', top: '27%', color: 'green' },     // Green plate
+  { id: 2, left: '56%', top: '27%', color: 'orange' },    // Orange plate
+  { id: 3, left: '70%', top: '27%', color: 'yellow' },    // Yellow plate (right)
 ];
 
 // Grill center position

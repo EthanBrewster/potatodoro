@@ -141,18 +141,34 @@ export function useSocket() {
   const createKitchen = useCallback((nickname, existingUserId) => {
     return new Promise((resolve, reject) => {
       if (!socketRef.current) {
-        reject(new Error('Not connected'));
+        console.error('Socket not initialized');
+        reject(new Error('Not connected to server'));
         return;
       }
+
+      if (!socketRef.current.connected) {
+        console.error('Socket not connected');
+        reject(new Error('Not connected to server'));
+        return;
+      }
+
+      console.log('📤 Emitting create_kitchen:', { nickname, userId: existingUserId });
+
+      // Add timeout for callback
+      const timeout = setTimeout(() => {
+        reject(new Error('Server timeout - please try again'));
+      }, 10000);
 
       socketRef.current.emit(
         'create_kitchen',
         { nickname, userId: existingUserId },
         (response) => {
+          clearTimeout(timeout);
+          console.log('📥 Received response:', response);
           if (response.success) {
             resolve(response);
           } else {
-            reject(new Error(response.error));
+            reject(new Error(response.error || 'Failed to create kitchen'));
           }
         }
       );
@@ -162,18 +178,34 @@ export function useSocket() {
   const joinKitchen = useCallback((kitchenCode, nickname, existingUserId) => {
     return new Promise((resolve, reject) => {
       if (!socketRef.current) {
-        reject(new Error('Not connected'));
+        console.error('Socket not initialized');
+        reject(new Error('Not connected to server'));
         return;
       }
+
+      if (!socketRef.current.connected) {
+        console.error('Socket not connected');
+        reject(new Error('Not connected to server'));
+        return;
+      }
+
+      console.log('📤 Emitting join_kitchen:', { kitchenCode, nickname, userId: existingUserId });
+
+      // Add timeout for callback
+      const timeout = setTimeout(() => {
+        reject(new Error('Server timeout - please try again'));
+      }, 10000);
 
       socketRef.current.emit(
         'join_kitchen',
         { kitchenCode, nickname, userId: existingUserId },
         (response) => {
+          clearTimeout(timeout);
+          console.log('📥 Received response:', response);
           if (response.success) {
             resolve(response);
           } else {
-            reject(new Error(response.error));
+            reject(new Error(response.error || 'Failed to join kitchen'));
           }
         }
       );

@@ -63,12 +63,15 @@ function LandingPage() {
 
   const performCreate = async () => {
     setIsCreating(true);
+    console.log('🍳 Creating kitchen with nickname:', nickname.trim());
     try {
       const result = await createKitchen(nickname.trim(), userId);
+      console.log('✅ Kitchen created:', result);
       setUser(result.userId, nickname.trim());
       setKitchen(result.kitchen);
     } catch (error) {
-      setError(error.message);
+      console.error('❌ Create kitchen error:', error);
+      setError(error.message || 'Failed to create kitchen');
     } finally {
       setIsCreating(false);
     }
@@ -76,13 +79,16 @@ function LandingPage() {
 
   const performJoin = async () => {
     setIsJoining(true);
+    console.log('🚪 Joining kitchen:', kitchenCodeInput.trim().toUpperCase());
     try {
       const code = kitchenCodeInput.trim().toUpperCase();
       const result = await joinKitchen(code, nickname.trim(), userId);
+      console.log('✅ Joined kitchen:', result);
       setUser(result.userId, nickname.trim());
       setKitchen(result.kitchen);
     } catch (error) {
-      setError(error.message);
+      console.error('❌ Join kitchen error:', error);
+      setError(error.message || 'Failed to join kitchen');
     } finally {
       setIsJoining(false);
     }
@@ -137,29 +143,29 @@ function LandingPage() {
             damping: 15,
             delay: 0.2,
           }}
-          className="w-full max-w-lg"
+          className="w-full max-w-2xl"
         >
           {/* Glassmorphism Card */}
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl">
+          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
             {/* Logo/Potato */}
             <motion.div
-              className="flex justify-center mb-4"
-              animate={{ y: [0, -8, 0] }}
+              className="flex justify-center -mt-8 -mb-8"
+              animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             >
               <img 
                 src="/potato_01_idle.png" 
-                alt="Hot Potato" 
-                className="w-40 h-40 object-contain drop-shadow-2xl"
+                alt="Potatodoro" 
+                className="w-72 h-72 md:w-96 md:h-96 object-contain"
                 style={{
-                  filter: 'drop-shadow(0 0 30px rgba(255, 165, 0, 0.5))',
+                  filter: 'drop-shadow(0 0 40px rgba(255, 165, 0, 0.6))',
                 }}
               />
             </motion.div>
 
             {/* Title */}
             <h1 
-              className="text-center text-5xl md:text-6xl font-black mb-2 tracking-tight"
+              className="text-center text-4xl md:text-5xl lg:text-6xl font-black mb-2 tracking-tight"
               style={{
                 fontFamily: "'Dela Gothic One', cursive",
                 background: 'linear-gradient(135deg, #FF6B35 0%, #F7C59F 50%, #FF6B35 100%)',
@@ -168,7 +174,7 @@ function LandingPage() {
                 textShadow: '0 0 40px rgba(255, 107, 53, 0.3)',
               }}
             >
-              HOT POTATO
+              POTATODORO
             </h1>
             <p className="text-center text-white/60 mb-8 text-lg">
               Pass the heat. Stay focused. Together.

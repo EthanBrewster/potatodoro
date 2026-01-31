@@ -274,7 +274,7 @@ function Kitchen() {
                 </span>
               </motion.div>
 
-              {/* Potato on Plate */}
+              {/* Potato on Plate - always shown in cooling/resting state */}
               {showPotatoOnPlate && (
                 <motion.div
                   initial={{ scale: 0, opacity: 0 }}
@@ -282,13 +282,13 @@ function Kitchen() {
                   className="relative"
                 >
                   <Potato
-                    state={isCooling ? POTATO_STATES.COOLING : POTATO_STATES.IDLE}
+                    state={POTATO_STATES.COOLING}
                     size="md"
-                    showEffects={isCooling}
+                    showEffects={true}
                   />
                   
                   {/* Click to start cooking (only for your own potato) */}
-                  {isMe && !someoneCooking && !isCooling && (
+                  {isMe && !someoneCooking && (
                     <motion.button
                       onClick={handleStartHeating}
                       disabled={isLoading}
@@ -302,16 +302,14 @@ function Kitchen() {
                     </motion.button>
                   )}
 
-                  {/* Cooling indicator */}
-                  {isCooling && (
-                    <motion.div
-                      className="absolute -bottom-6 left-1/2 -translate-x-1/2"
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <span className="text-blue-300 text-xs">❄️ Cooling</span>
-                    </motion.div>
-                  )}
+                  {/* Resting indicator */}
+                  <motion.div
+                    className="absolute -bottom-6 left-1/2 -translate-x-1/2"
+                    animate={{ opacity: [0.5, 0.8, 0.5] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <span className="text-blue-300 text-xs">❄️ Resting</span>
+                  </motion.div>
                 </motion.div>
               )}
 

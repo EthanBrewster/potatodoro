@@ -346,6 +346,23 @@ function Kitchen() {
                 transition={{ type: 'spring', stiffness: 200, damping: 20 }}
                 className="relative"
               >
+                {/* Who's cooking label - ABOVE the potato */}
+                <motion.div
+                  className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap z-10"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <span className={`
+                    px-4 py-2 rounded-full text-sm font-bold
+                    ${isHoldingPotato 
+                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/50' 
+                      : 'bg-black/70 text-white'
+                    }
+                  `}>
+                    {isHoldingPotato ? `${currentHolder?.nickname} (you)` : currentHolder?.nickname}
+                  </span>
+                </motion.div>
+
                 <Potato
                   state={potatoState}
                   size="xxl"
@@ -353,32 +370,6 @@ function Kitchen() {
                   totalDurationMs={timerDuration || DEFAULT_WORK_DURATION}
                   showEffects={true}
                 />
-
-                {/* Who's cooking label */}
-                <motion.div
-                  className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <span className="text-white bg-black/60 px-3 py-1 rounded-full text-sm">
-                    {isHoldingPotato ? "Your potato!" : `${currentHolder?.nickname}'s potato`}
-                  </span>
-                </motion.div>
-
-                {/* Timer (positioned above the potato) */}
-                {timerStartedAt && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="absolute -top-20 left-1/2 -translate-x-1/2"
-                  >
-                    <Timer
-                      startTime={timerStartedAt}
-                      duration={timerDuration}
-                      onComplete={() => {}}
-                    />
-                  </motion.div>
-                )}
 
                 {/* Grab button (only for the person cooking, when critical) */}
                 {isHoldingPotato && (
@@ -439,6 +430,24 @@ function Kitchen() {
             </motion.div>
           )}
         </div>
+
+        {/* Timer - Fixed bottom right */}
+        <AnimatePresence>
+          {someoneCooking && timerStartedAt && (
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              className="fixed bottom-6 right-6 z-40"
+            >
+              <Timer
+                startTime={timerStartedAt}
+                duration={timerDuration}
+                onComplete={() => {}}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Toss Animation Overlay */}
         <AnimatePresence>

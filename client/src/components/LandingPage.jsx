@@ -47,22 +47,19 @@ function LandingPage() {
   const handleStartKitchen = () => {
     console.log('🖱️ Start Kitchen clicked, nickname:', nickname, 'isConnected:', isConnected);
     if (!nickname.trim()) {
-      console.log('📝 No nickname, showing modal');
-      setPendingAction('create');
-      setShowNicknameModal(true);
+      setError('Please enter your chef name first!');
       return;
     }
     performCreate();
   };
 
   const handleJoinKitchen = () => {
-    if (!kitchenCodeInput.trim()) {
-      setError('Please enter a Kitchen Code');
+    if (!nickname.trim()) {
+      setError('Please enter your chef name first!');
       return;
     }
-    if (!nickname.trim()) {
-      setPendingAction('join');
-      setShowNicknameModal(true);
+    if (!kitchenCodeInput.trim()) {
+      setError('Please enter a Kitchen Code');
       return;
     }
     performJoin();
@@ -188,6 +185,19 @@ function LandingPage() {
             <p className="text-center text-white/60 mb-8 text-lg">
               Pass the heat. Stay focused. Together.
             </p>
+
+            {/* Your Name Input */}
+            <div className="mb-6">
+              <label className="block text-white/60 text-sm mb-2 text-center">Your Chef Name</label>
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="Enter your name..."
+                maxLength={20}
+                className="w-full px-4 py-3 bg-black/30 rounded-xl text-white placeholder-white/40 border border-white/10 focus:border-orange-500/50 focus:bg-black/40 transition-all text-center text-lg"
+              />
+            </div>
 
             {/* Join Kitchen Section */}
             <div className="space-y-4 mb-6">

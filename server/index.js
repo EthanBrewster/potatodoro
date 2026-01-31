@@ -45,6 +45,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'hot', timestamp: Date.now() });
 });
 
+// Online players count endpoint
+app.get('/api/online-count', (req, res) => {
+  const count = io.engine?.clientsCount || 0;
+  res.json({ count });
+});
+
 // API Routes
 app.get('/api/kitchen/:code', async (req, res) => {
   try {

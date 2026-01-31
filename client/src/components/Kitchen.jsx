@@ -373,28 +373,6 @@ function Kitchen() {
                   showEffects={true}
                 />
 
-                {/* Grab button - always visible for the person cooking */}
-                {isHoldingPotato && (
-                  <motion.div
-                    className="absolute -bottom-16 left-1/2 -translate-x-1/2"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <motion.button
-                      onClick={handleGrab}
-                      disabled={isLoading}
-                      className={`px-6 py-3 font-bold rounded-xl shadow-lg transition-all ${
-                        potatoState === POTATO_STATES.CRITICAL
-                          ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white'
-                          : 'bg-white/20 hover:bg-white/30 text-white/80'
-                      }`}
-                      animate={potatoState === POTATO_STATES.CRITICAL ? { scale: [1, 1.05, 1] } : {}}
-                      transition={{ duration: 0.3, repeat: potatoState === POTATO_STATES.CRITICAL ? Infinity : 0 }}
-                    >
-                      {potatoState === POTATO_STATES.CRITICAL ? '🧤 GRAB IT! 🔥' : '🧤 Grab Potato'}
-                    </motion.button>
-                  </motion.div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -466,20 +444,49 @@ function Kitchen() {
           )}
         </AnimatePresence>
 
-        {/* Timer - Fixed bottom right */}
+        {/* Timer & Grab Button - Fixed bottom right */}
         <AnimatePresence>
           {someoneCooking && timerStartedAt && (
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 50 }}
-              className="fixed bottom-6 right-6 z-40"
+              className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-4"
             >
               <Timer
                 startTime={timerStartedAt}
                 duration={timerDuration}
                 onComplete={() => {}}
               />
+              
+              {/* Grab Button - only for the person cooking */}
+              {isHoldingPotato && (
+                <motion.button
+                  onClick={handleGrab}
+                  disabled={isLoading}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={potatoState === POTATO_STATES.CRITICAL ? { scale: [1, 1.1, 1] } : {}}
+                  transition={{ duration: 0.3, repeat: potatoState === POTATO_STATES.CRITICAL ? Infinity : 0 }}
+                  className={`relative ${potatoState === POTATO_STATES.CRITICAL ? 'animate-bounce' : ''}`}
+                  style={{
+                    filter: potatoState === POTATO_STATES.CRITICAL 
+                      ? 'drop-shadow(0 0 20px rgba(255, 69, 0, 0.8))' 
+                      : 'drop-shadow(0 0 10px rgba(255, 165, 0, 0.4))',
+                  }}
+                >
+                  <img 
+                    src="/btn_toss_active.png" 
+                    alt="Grab Potato" 
+                    className="h-20 w-auto"
+                  />
+                  {potatoState === POTATO_STATES.CRITICAL && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs font-bold text-red-400 whitespace-nowrap bg-black/60 px-2 py-1 rounded-full">
+                      GRAB IT!
+                    </span>
+                  )}
+                </motion.button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

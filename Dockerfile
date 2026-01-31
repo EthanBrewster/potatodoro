@@ -23,8 +23,9 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 # Copy package files and install production dependencies only
+# Use --ignore-scripts to skip postinstall (client is already built)
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy server files
 COPY server ./server

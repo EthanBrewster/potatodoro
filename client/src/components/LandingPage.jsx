@@ -3,31 +3,6 @@ import { motion } from 'framer-motion';
 import useGameStore from '../store/gameStore';
 import { useSocket } from '../hooks/useSocket';
 
-// Learning science cards data
-const SCIENCE_CARDS = [
-  {
-    icon: '🍅',
-    title: 'Pomodoro Technique',
-    description: 'Work in focused 25-minute bursts. Short sprints beat marathon sessions for deep learning and sustained attention.',
-    color: 'from-red-500/20 to-orange-500/20',
-    borderColor: 'border-red-500/30',
-  },
-  {
-    icon: '👥',
-    title: 'Peer Accountability',
-    description: 'Knowing teammates are waiting for the potato reduces procrastination. Social commitment is a powerful motivator.',
-    color: 'from-blue-500/20 to-purple-500/20',
-    borderColor: 'border-blue-500/30',
-  },
-  {
-    icon: '❄️',
-    title: 'Cognitive Cooling',
-    description: 'Mandatory breaks allow memory consolidation. Your brain processes and stores information during rest periods.',
-    color: 'from-cyan-500/20 to-blue-500/20',
-    borderColor: 'border-cyan-500/30',
-  },
-];
-
 function LandingPage() {
   const [kitchenCodeInput, setKitchenCodeInput] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -175,7 +150,7 @@ function LandingPage() {
               <img 
                 src="/potato_01_idle.png" 
                 alt="Hot Potato" 
-                className="w-24 h-24 object-contain drop-shadow-2xl"
+                className="w-40 h-40 object-contain drop-shadow-2xl"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(255, 165, 0, 0.5))',
                 }}
@@ -277,43 +252,7 @@ function LandingPage() {
           </div>
         </motion.div>
 
-        {/* Why It Works Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="w-full max-w-4xl mt-12"
-        >
-          <h2 className="text-center text-white/60 text-sm uppercase tracking-widest mb-6">
-            Why It Works
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {SCIENCE_CARDS.map((card, index) => (
-              <motion.div
-                key={card.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 + index * 0.1 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className={`
-                  bg-gradient-to-br ${card.color}
-                  backdrop-blur-sm rounded-2xl p-5 
-                  border ${card.borderColor}
-                  transition-all duration-300
-                `}
-              >
-                <div className="text-3xl mb-3">{card.icon}</div>
-                <h3 className="text-white font-bold text-lg mb-2">{card.title}</h3>
-                <p className="text-white/60 text-sm leading-relaxed">
-                  {card.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Footer */}
+{/* Footer */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
